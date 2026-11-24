@@ -218,12 +218,14 @@ input[type=number],input[type=text]{width:100%;font:inherit;font-size:17px;paddi
   function stop(){ running = false; clearInterval(timer); timer = null; unlock(); try{ if(keep) keep.pause(); }catch(e){} }
 
   var keep = null;
+  var BYPASS_SILENT = false; // true = plays even on silent switch, but pauses Spotify
   function unlockAudio(){
     try{
       var a = audio();
+      try{ if(navigator.audioSession) navigator.audioSession.type = BYPASS_SILENT ? 'playback' : 'ambient'; }catch(e){}
       var b = a.createBuffer(1, 1, 22050), s = a.createBufferSource();
       s.buffer = b; s.connect(a.destination); s.start(0);
-      if(!keep){
+      if(BYPASS_SILENT && !keep){
         var n = 8000, buf = new ArrayBuffer(44 + n), v = new DataView(buf);
         function w(o, str){ for(var i=0;i<str.length;i++) v.setUint8(o+i, str.charCodeAt(i)); }
         w(0,'RIFF'); v.setUint32(4,36+n,true); w(8,'WAVE'); w(12,'fmt ');
@@ -234,7 +236,7 @@ input[type=number],input[type=text]{width:100%;font:inherit;font-size:17px;paddi
         keep = new Audio(URL.createObjectURL(new Blob([buf],{type:'audio/wav'})));
         keep.loop = true; keep.volume = 0.01;
       }
-      var p = keep.play(); if(p && p.catch) p.catch(function(){});
+      if(keep){ var p = keep.play(); if(p && p.catch) p.catch(function(){}); }
     }catch(e){}
   }
 
